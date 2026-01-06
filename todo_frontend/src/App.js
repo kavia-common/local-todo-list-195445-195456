@@ -1,47 +1,68 @@
-import React, { useState, useEffect } from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { useMemo, useState } from "react";
+import "./App.css";
+import { AppHeader } from "./components/AppHeader";
+import { TodoFilters } from "./components/TodoFilters";
+import { TodoInput } from "./components/TodoInput";
+import { TodoList } from "./components/TodoList";
+import { useTodos } from "./hooks/useTodos";
 
 // PUBLIC_INTERFACE
 function App() {
-  const [theme, setTheme] = useState('light');
+  const { todos, addTodo, deleteTodo, toggleTodo, updateTodoTitle, clearCompleted, counts } =
+    useTodos();
 
-  // Effect to apply theme to document element
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-  }, [theme]);
+  const [filter, setFilter] = useState("all");
 
-  // PUBLIC_INTERFACE
-  const toggleTheme = () => {
-    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
-  };
+  const filteredTodos = useMemo(() => {
+    if (filter === "active") return todos.filter((t) => !t.completed);
+    if (filter === "completed") return todos.filter((t) => t.completed);
+    return todos;
+  }, [todos, filter]);
+
+  const showClearCompleted = counts.completed > 0;
 
   return (
     <div className="App">
-      <header className="App-header">
-        <button 
-          className="theme-toggle" 
-          onClick={toggleTheme}
-          aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-        >
-          {theme === 'light' ? '🌙 Dark' : '☀️ Light'}
-        </button>
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <p>
-          Current theme: <strong>{theme}</strong>
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <main className="page">
+        <div className="card">
+          <AppHeader counts={counts} />
+
+          <TodoInput onAdd={addTodo} />
+
+          <div className="toolbar">
+            <TodoFilters
+              value={filter}
+              onChange={setFilter}
+              disabled={todos.length === 0}
+            />
+
+            <div className="toolbar__spacer" />
+
+            <button
+              type="button"
+              className="btn btnSecondary"
+              onClick={clearCompleted}
+              disabled={!showClearCompleted}
+              aria-disabled={!showClearCompleted}
+            >
+              Clear completed
+            </button>
+          </div>
+
+          <TodoList
+            todos={filteredTodos}
+            onToggle={toggleTodo}
+            onDelete={deleteTodo}
+            onUpdateTitle={updateTodoTitle}
+          />
+        </div>
+
+        <footer className="footer">
+          <span>
+            Tip: click a todo title to edit. Press <kbd>Esc</kbd> to cancel.
+          </span>
+        </footer>
+      </main>
     </div>
   );
 }
